@@ -1,0 +1,11 @@
+--2019-06-25 10:32:00--  https://www.linkedin.com/search/results/people/?facetCurrentCompany=%5B%222276%22%5D
+Resolving www.linkedin.com (www.linkedin.com)... 185.63.144.1, 2a05:f500:11:101::b93f:9001
+Connecting to www.linkedin.com (www.linkedin.com)|185.63.144.1|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Saving to: ‘index.html?facetCurrentCompany=["2276"]’
+
+index.html?facetCurrentCompany=["2276"]         [<=>                                                                                         ]       0  --.-KB/s               index.html?facetCurrentCompany=["2276"]         [ <=>                                                                                        ]  68.91K   325KB/s               index.html?facetCurrentCompany=["2276"]         [  <=>                                                                                       ] 172.14K   551KB/s    in 0.3s    
+
+2019-06-25 10:32:01 (551 KB/s) - ‘index.html?facetCurrentCompany=["2276"]’ saved [176271]
+
