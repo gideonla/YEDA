@@ -37,13 +37,43 @@ class EmailBuilder:
         for i in attachments:
             self.message.attachments.add(i)
 
+    def search_inbox(self,email:str ):
+        mailbox = self.account.mailbox()
+
+        inbox = mailbox.inbox_folder()
+        query = inbox.new_query()
+
+        query = query.on_attribute('address').contains(email)
+        messages = inbox.get_messages(limit=25, query=query)
+        for message in messages:
+            i=(message.sender.address)
+            if i :
+                return True
+        return False
+
+    def search_sent(self,email:str ):
+        mailbox = self.account.mailbox()
+
+        sent = mailbox.sent_folder()
+        query = sent.new_query()
+
+        query = sent.q().search(email)
+        messages = sent.get_messages(limit=25, query=query)
+        #pdb.set_trace()
+        for message in messages:
+            if (message.to[0].address):
+                return True
+        return False
 
 
 if __name__ == "__main__":
-    format_body = FormatBody("/home/gideon/YEDA/template_email", title="bla", last_name="bla1", pi_name="bla2",
-                             company_name="bla3s", tech_desc='bla4')
-    n = EmailBuilder(to_email="glapidoth@gmail.com",bcc="gideon.lapidoth@weizmann.ac.il",subject="NEW",body=format_body.make_html(),attachments=["/home/gideon/YEDA/varified_emails2"])
-    pdb.set_trace()
-    n.send()
+    #format_body = FormatBody("/home/gideon/YEDA/template_email", title="bla", last_name="bla1", pi_name="bla2",
+    #                         company_name="bla3s", tech_desc='bla4')
+    #n = EmailBuilder(to_email="glapidoth@gmail.com",bcc="gideon.lapidoth@weizmann.ac.il",subject="NEW",body=format_body.make_html(),attachments=["/home/gideon/YEDA/varified_emails2"])
+    #pdb.set_trace()
+    #n.send()
+    email = EmailBuilder()
+    if email.search_sent("james@ingredientech.com"):
+        print ("yes")
 
 

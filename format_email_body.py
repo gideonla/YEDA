@@ -29,12 +29,14 @@ class FormatBody:
         self.modified = self.modified.replace("[LAST_NAME]",last_name)
     def change_pi_name(self,pi_name):
         self.modified = self.modified.replace("[PI_NAME]",pi_name)
+    def change_first_name(self,first_name):
+        self.modified = self.modified.replace("[FIRST_NAME]",first_name)
 
     def change_company_name(self):
-        if self.ends_with_s():
-            self.company_name = self.company_name+"\'s"
-        else:
-            self.company_name = self.company_name + "\'"
+        # if self.ends_with_s():
+        #     self.company_name = self.company_name+"\'s"
+        # else:
+        #     self.company_name = self.company_name + "\'"
 
         self.modified = self.modified.replace("[COMPANY_NAME]",self.company_name)
 

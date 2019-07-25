@@ -6,6 +6,16 @@ from difflib import SequenceMatcher
 from collections import OrderedDict
 
 
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0', ''):
+        return False
+    else:
+        raise ValueError('Boolean value expected.')
+
 def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
@@ -25,11 +35,13 @@ class GoogleSheets:
     
 
     def __init__(self, sheet_hash, master_list:bool):
+        self.c = [] #this list will map bewtween names and the current sheet coulmn values
         self.master_list=master_list
         self.wks = GoogleSheets.gc.open_by_key(sheet_hash).sheet1
         self.sheet_name=GoogleSheets.gc.open_by_key(sheet_hash).title
         self.map_col_header_to_col_num()
         self.counter=0
+
 
     def map_col_header_to_col_num(self):
         """ This function will map the header title numbers (e.g. "Company name")
@@ -39,52 +51,78 @@ class GoogleSheets:
         """
         header_values = [x.lower() for x in self.wks.row_values(1)]
         key_values =[x.lower() for x in ["Company Name","title","first","Last Name","E-Mail","chosen","contacted","replied"]]
-        c=[]
         #c=[i for i, item in enumerate(header_values) find_most_similar_item_in_list(item.lower(),key_values)]
         for item in key_values:
-            c.append(find_most_similar_item_in_list(item.lower(),header_values))
+            self.c.append(find_most_similar_item_in_list(item.lower(),header_values))
         try:
-            self.companies = self.wks.col_values(c[0]+1)
+            self.companies = self.wks.col_values(self.c[0]+1)
         except:
             sys.exit("google sheet -"+self.sheet_name+"- does not have \"companies\" column")
         try:
-            self.titles = self.wks.col_values(c[1]+1)
+            self.titles = self.wks.col_values(self.c[1]+1)
         except:
             sys.exit("google sheet -"+self.sheet_name+"- does not have \"titles\" column")
         try:
-            self.first_name= self.wks.col_values(c[2]+1)
+            self.first_name= self.wks.col_values(self.c[2]+1)
         except:
             sys.exit("google sheet -"+self.sheet_name+"- does not have \"first name\" column")
         try:
-            self.last_names = self.wks.col_values(c[3]+1)
+            self.last_names = self.wks.col_values(self.c[3]+1)
         except:
             sys.exit("google sheet -"+self.sheet_name+"- does not have \"last names\" column")
         try:
-            self.emails = self.wks.col_values(c[4]+1)
+            self.emails = self.wks.col_values(self.c[4]+1)
         except:
             sys.exit("google sheet -"+self.sheet_name+"- does not have \"emails\" column")
         try:
-            self.chosen = self.wks.col_values(c[5]+1)
+            self.chosen = self.wks.col_values(self.c[5]+1)
         except:
-            sys.exit("google sheet -"+self.sheet_name+"- does not have \"chosen\" column")
+            if not self.master_list:
+                sys.exit("google sheet -"+self.sheet_name+"- does not have \"chosen\" column")
         if self.master_list:
             try:
-                self.contacted = self.wks.col_values(c[6] + 1)
+                self.contacted = self.wks.col_values(self.c[6] + 1)
             except:
                 sys.exit("google sheet -"+self.sheet_name+"- does not have \"contacted\" column")
             try:
-                self.replied = self.wks.col_values(c[7] + 1)
+                self.replied = self.wks.col_values(self.c[7] + 1)
             except:
                 sys.exit("google sheet -"+self.sheet_name+"- does not have \"replied\" column")
 
 
 
 
+    def update_contacted(self,email):
+        if not self.master_list:
+            return
+        cell = self.wks.find(email)
+        print(cell.row)
+        print(email)
+        # pdb.set_trace()
+        self.wks.update_cell(cell.row,self.c[6]+1,1)
+
+    def update_replied(self,email:str):
+        """
+        Given a cell numner in a google sheet it will mark the cell with '1'
+        The purpose of this is to let me know that this person has replied to my email
+        :param cell_num:
+        :return: null
+        """
+        cell = self.wks.find(email)
+        print (cell.row)
+        print (email)
+                #pdb.set_trace()
+
+        self.wks.update_cell(cell.row,self.c[7]+1,1)
+
     def get_company_names(self):
         return self.companies
 
     def get_last_names(self):
         return self.last_names
+
+    def get_first_names(self):
+        return self.first_name
 
     def get_titles(self):
         return self.titles
@@ -95,11 +133,20 @@ class GoogleSheets:
     def get_chosen(self):
         return self.chosen
 
+    def check_if_replied(self,email):
+        for i, item in enumerate(self.emails):
+            if (item==email):
+                break
+        try:
+            return str2bool(self.replied[i])
+        except IndexError: #if the coulmn has no values the length of the coulmn is 0. in this case I am assuming that the values are false
+            return False
+
     def iterate_sheet(self):
         while self.counter<len(self.chosen):
             if self.chosen[self.counter] == '1':
                 self.counter = self.counter + 1
-                return  self.get_company_names()[self.counter-1], self.get_last_names()[self.counter-1],self.get_titles()[self.counter-1],self.get_emails()[self.counter-1]
+                return  self.get_company_names()[self.counter-1], self.get_last_names()[self.counter-1],self.get_titles()[self.counter-1],self.get_emails()[self.counter-1],self.get_first_names()[self.counter-1]
 
             self.counter=self.counter+1
 
@@ -115,7 +162,7 @@ class GoogleSheets:
 if __name__ == "__main__":
     google_sheet = sys.argv[1]
    # # wks = gc.open('Companies to interest in technology').sheet1
-    GS = GoogleSheets(google_sheet)
+    GS = GoogleSheets(google_sheet,0)
    #
    # # for num, c in enumerate(GS.get_chosen(), start=0):
    #  #    if c=='1':
