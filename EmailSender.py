@@ -4,9 +4,7 @@ from EmailBuilder import *
 import argparse
 import pdb
 
-from gooey import Gooey
 
-@Gooey
 
 def parse_args():
     """"""
