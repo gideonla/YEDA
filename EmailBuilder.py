@@ -43,9 +43,11 @@ class EmailBuilder:
         inbox = mailbox.inbox_folder()
         query = inbox.new_query()
 
-        query = query.on_attribute('address').contains(email)
+        query=query.on_attribute('from').contains(email)
         messages = inbox.get_messages(limit=25, query=query)
+
         for message in messages:
+            #pdb.set_trace()
             i=(message.sender.address)
             if i :
                 return True
