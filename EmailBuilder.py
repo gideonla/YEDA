@@ -3,7 +3,7 @@ from format_email_body import *
 import pdb
 class EmailBuilder:
     credentials = ('4dca8325-3be8-42aa-80d8-be291da5c1ea', 'myewtg3_3tbls-fq?0?whRJGfdLyO65b')
-    token_backend = FileSystemTokenBackend(token_path='/home/gideon/YEDA', token_filename='o365_token.txt')
+    token_backend = FileSystemTokenBackend(token_path='', token_filename='o365_token.txt')
     account = Account(credentials, token_backend=token_backend)
 
     def __init__(self, to_email=None,cc=None,bcc=None,subject=None, body=None, attachments=None):
