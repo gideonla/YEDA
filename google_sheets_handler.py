@@ -4,6 +4,10 @@ import sys
 import pdb
 from difflib import SequenceMatcher
 from collections import OrderedDict
+import re
+import time
+import colorama
+from colorama import Fore, Style
 
 
 def str2bool(v):
@@ -95,7 +99,13 @@ class GoogleSheets:
     def update_contacted(self,email):
         if not self.master_list:
             return
-        cell = self.wks.find(email)
+        email_re = re.compile(email, re.IGNORECASE)
+        try:
+            cell = self.wks.find(email_re)
+        except gspread.exceptions.CellNotFound:
+            print (Fore.RED +"Could not find "+email+" in \"" +self.sheet_name+"\"" )
+            print(Style.RESET_ALL)
+            return
         print(cell.row)
         print(email)
         # pdb.set_trace()
@@ -153,16 +163,44 @@ class GoogleSheets:
     def number_of_chosen_emails(self):
         return self.chosen.count("1")
 
-
-
-
-
+    def remove_redundant_entries(self):
+        """
+         Goes over the google sheet and removes double entries;
+         keeping the row with more data
+         :return: null
+        """
+        all_index_list=[]
+        tmp_sheet = self.wks.get_all_values()
+        for i in self.emails:
+            email_re= re.compile(i, re.IGNORECASE)
+            index_list=[]
+           # pdb.set_trace()
+            for index,j in enumerate(self.emails):
+                if bool(re.search(email_re,j)):
+                    index_list.append(index)
+            if len(index_list)>1:
+                print(i)
+                double_emails=[]
+                for email_row in index_list:
+                    double_emails.append(tmp_sheet[email_row])
+                #print(index_list)
+                ind=max(enumerate(double_emails), key=lambda x: len(x[1]))[0]
+                index_list.pop(ind)
+                #print(index_list)
+                all_index_list.append(index_list)
+        flat_all_index_list=[item for sublist in all_index_list for item in sublist]
+        s=set(flat_all_index_list)
+        flat_all_index_list=list(s)
+        flat_all_index_list.sort()
+        print(flat_all_index_list)
+        for i,val in enumerate(flat_all_index_list):
+            self.wks.delete_row(val-i+1)
 
 
 if __name__ == "__main__":
     google_sheet = sys.argv[1]
    # # wks = gc.open('Companies to interest in technology').sheet1
-    GS = GoogleSheets(google_sheet,0)
+    GS = GoogleSheets(google_sheet,1)
    #
    # # for num, c in enumerate(GS.get_chosen(), start=0):
    #  #    if c=='1':
@@ -170,4 +208,4 @@ if __name__ == "__main__":
    #  print (GS.number_of_chosen_emails())
    #  for i in range(GS.number_of_chosen_emails()):
    #      print (GS.iterate_sheet())
-    print (GS.emails)
+    GS.remove_redundant_entries()
