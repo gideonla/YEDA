@@ -38,6 +38,19 @@ class FormatBody:
         # else:
         #     self.company_name = self.company_name + "\'"
 
+        # In the next code block I remove ("inc","AG", "limited", etc...)
+
+        self.company_name=re.sub(', Inc(.*)?','', self.company_name)
+        self.company_name = re.sub(' Inc(.*)?', '', self.company_name)
+        self.company_name=re.sub(', LLC(.*)?', '', self.company_name)
+        self.company_name=re.sub(' Corporation', '', self.company_name)
+        self.company_name=re.sub(' INC.', '', self.company_name)
+        self.company_name=re.sub(' Co., Ltd.', '', self.company_name)
+        self.company_name=re.sub(' AG', '', self.company_name)
+        self.company_name=re.sub(' International(.*)?', '', self.company_name)
+        self.company_name=re.sub(' Ltd(.*)?', '', self.company_name)
+
+
         self.modified = self.modified.replace("[COMPANY_NAME]",self.company_name)
 
 

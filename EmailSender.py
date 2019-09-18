@@ -35,26 +35,28 @@ if __name__ == '__main__':
     GS = GoogleSheets(args.cshn,0) #create the google sheet object that holds the email list for the current campaign
     GS_master= GoogleSheets(args.mshn,1) #this object holds the google sheet for the master list (where all the company list live)
     for i in range(GS.number_of_chosen_emails()):
-        company,last_name,title,email,first_name=GS.iterate_sheet()
-        email_replied=GS_master.check_if_replied(email) #if this email has been contacted before (as marked in the master list) return appropriate boolean.
+        company,last_name,title,emails,first_name=GS.iterate_sheet()
+        email_list=emails.split(",")
+        email_replied=GS_master.check_if_replied(email_list[0]) #if this email has been contacted before (as marked in the master list) return appropriate boolean.
         if email_replied:
             format_body = FormatBody(args.private_email_message_template, pi_name=args.pi_name, tech_desc=args.desc)
             format_body.change_first_name(first_name)
         else:
             format_body = FormatBody(args.general_email_message_template, pi_name=args.pi_name, tech_desc=args.desc)
-        print (company,last_name,title,email)
+        print (company,last_name,title,email_list[0])
         format_body.add_company_name(company)
         format_body.change_last_name(last_name)
         format_body.add_title(title)
         format_body.check_placeholders()
-        n = EmailBuilder(to_email=email, bcc=args.bcc,cc=args.cc, subject=args.email_subject,body=format_body.make_html(),attachments=args.attachments)
-
+        email_list.append(args.bcc)
+        email_list.append("glapidoth@gmail.com")
+        n = EmailBuilder(to_email="", bcc=email_list,cc=args.cc, subject=args.email_subject,body=format_body.make_html(),attachments=args.attachments)
         if (args.send):
             n.send()
         else:
             print ("saving draft")
             n.save_draft()
-        GS_master.update_contacted(email)
+        GS_master.update_contacted(email_list[0])
         format_body.init()
 
 

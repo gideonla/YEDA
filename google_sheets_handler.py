@@ -38,13 +38,33 @@ class GoogleSheets:
     gc = gspread.authorize(creds)
     
 
-    def __init__(self, sheet_hash, master_list:bool):
+    def __init__(self, sheet_hash, master_list:bool=0, general_WS:bool=0):
         self.c = [] #this list will map bewtween names and the current sheet coulmn values
+        self.general_WS = general_WS  # general WS means that this is not a "companies WKS"
         self.master_list=master_list
         self.wks = GoogleSheets.gc.open_by_key(sheet_hash).sheet1
         self.sheet_name=GoogleSheets.gc.open_by_key(sheet_hash).title
         self.map_col_header_to_col_num()
         self.counter=0
+
+
+    def get_row_by_name(self,name):
+        temp_names=[]
+        for index,fname in enumerate(self.first_name):
+            temp_name=self.first_name[index]+" "+self.last_names[index]
+            temp_names.append(temp_name)
+        return find_most_similar_item_in_list(name,temp_names)+1 # the plus 1 is becuase cells in google sheets atart at 1 and not 0
+
+    def update_emails(self,row_num,emails):
+        #pdb.set_trace()
+        current_cell_value= self.wks.cell(row_num, self.c[4]+1).value
+        self.wks.update_cell(row_num, self.c[4]+1, current_cell_value+","+",".join(emails))
+
+    def get_coulmn_number_by_value(self,value):
+        header_values = [x.lower() for x in self.wks.row_values(1)]
+        index=find_most_similar_item_in_list(value.lower(), header_values)
+        return index+1
+
 
 
     def map_col_header_to_col_num(self):
@@ -53,6 +73,9 @@ class GoogleSheets:
             I assume that the title of the
             columns are the first row of the sheet
         """
+        if self.general_WS:
+            return
+        self.col_num_map={}
         header_values = [x.lower() for x in self.wks.row_values(1)]
         key_values =[x.lower() for x in ["Company Name","title","first","Last Name","E-Mail","chosen","contacted","replied"]]
         #c=[i for i, item in enumerate(header_values) find_most_similar_item_in_list(item.lower(),key_values)]
@@ -60,36 +83,45 @@ class GoogleSheets:
             self.c.append(find_most_similar_item_in_list(item.lower(),header_values))
         try:
             self.companies = self.wks.col_values(self.c[0]+1)
+            self.col_num_map.update({'companies': self.c[0]+1})
         except:
             sys.exit("google sheet -"+self.sheet_name+"- does not have \"companies\" column")
         try:
             self.titles = self.wks.col_values(self.c[1]+1)
+            self.col_num_map.update({'titles': self.c[1] + 1})
         except:
             sys.exit("google sheet -"+self.sheet_name+"- does not have \"titles\" column")
         try:
             self.first_name= self.wks.col_values(self.c[2]+1)
+            self.col_num_map.update({'first_name': self.c[2] + 1})
         except:
             sys.exit("google sheet -"+self.sheet_name+"- does not have \"first name\" column")
         try:
             self.last_names = self.wks.col_values(self.c[3]+1)
+            self.col_num_map.update({'last_names': self.c[3] + 1})
         except:
             sys.exit("google sheet -"+self.sheet_name+"- does not have \"last names\" column")
         try:
             self.emails = self.wks.col_values(self.c[4]+1)
+            self.col_num_map.update({'emails': self.c[4] + 1})
+
         except:
             sys.exit("google sheet -"+self.sheet_name+"- does not have \"emails\" column")
         try:
             self.chosen = self.wks.col_values(self.c[5]+1)
+            self.col_num_map.update({'chosen': self.c[5] + 1})
         except:
             if not self.master_list:
                 sys.exit("google sheet -"+self.sheet_name+"- does not have \"chosen\" column")
         if self.master_list:
             try:
                 self.contacted = self.wks.col_values(self.c[6] + 1)
+                self.col_num_map.update({'contacted': self.c[6] + 1})
             except:
                 sys.exit("google sheet -"+self.sheet_name+"- does not have \"contacted\" column")
             try:
                 self.replied = self.wks.col_values(self.c[7] + 1)
+                self.col_num_map.update({'replied': self.c[7] + 1})
             except:
                 sys.exit("google sheet -"+self.sheet_name+"- does not have \"replied\" column")
 
@@ -97,6 +129,8 @@ class GoogleSheets:
 
 
     def update_contacted(self,email):
+        if not email:
+            return
         if not self.master_list:
             return
         email_re = re.compile(email, re.IGNORECASE)
@@ -140,8 +174,14 @@ class GoogleSheets:
     def get_emails(self):
         return self.emails
 
+    def get_contacted(self):
+        return self.contacted
+
     def get_chosen(self):
         return self.chosen
+
+    def get_replied(self):
+        return self.replied
 
     def check_if_replied(self,email):
         for i, item in enumerate(self.emails):
@@ -161,6 +201,9 @@ class GoogleSheets:
             self.counter=self.counter+1
 
     def number_of_chosen_emails(self):
+        if self.chosen.count("1")<1:
+            raise Exception('No emails were chosen to send')
+            return
         return self.chosen.count("1")
 
     def remove_redundant_entries(self):

@@ -4,6 +4,7 @@ from EmailBuilder import *
 import argparse
 import pdb
 import time
+from gspread import Cell
 
 
 
@@ -20,16 +21,33 @@ if __name__ == "__main__":
     args = parse_args()
     GS_master = GoogleSheets(args.mshn,
                              1)  # this object holds the google sheet for the master list (where all the company list live)
-    EMAIL=EmailBuilder()
-    email_list=GS_master.get_emails()
-    email_list.pop(0)
-    for email in email_list:
-        print (email)
-        if email=="":
+    EMAIL = EmailBuilder()
+    email_list = GS_master.get_emails()
+    replied = GS_master.get_replied()
+    replied_coulmn = GS_master.col_num_map.get("replied")
+    replied.pop(0)
+    email_list.pop(0)  # this is to skip the title of the coulmn
+    contacted_padding = ['0'] * (len(email_list) - len(replied))
+    replied.extend(contacted_padding)
+    found = False
+    cell_list = []
+    for index in range(len(email_list)):
+        print(index)
+        # pdb.set_trace()
+        if str2bool(replied[index]):
             continue
-        found=EMAIL.search_inbox(email)
+        if not any(c.isalpha() for c in email_list[index]):  # if email cell is empty then skip
+            continue
+        for email_str in email_list[index].split(","):
+            if "@" not in email_str:
+                continue
+            found = EMAIL.search_inbox(email_str) or found
+            #pdb.set_trace()
         if found:
-            print (email)
-            GS_master.update_replied(email)
+            print(email_str)
+        cell_list.append(Cell(index + 2, replied_coulmn, int(found)))
+        found=False
+    pdb.set_trace()
+    GS_master.wks.update_cells(cell_list)
     end = time.time()
-    print(" Total run time: "+end - start+" seconds")
+    print(" Total run time: " + str(end - start) + " seconds")
