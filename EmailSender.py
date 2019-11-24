@@ -24,10 +24,6 @@ def parse_args():
     parser.add_argument('-attachments', nargs='+', help='list of files to attach to email')
     parser.add_argument("--send", type=str2bool, nargs='?',const=True, default=False, help="If false save email to drafts and don't send")
 
-
-
-
-
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -49,7 +45,7 @@ if __name__ == '__main__':
         format_body.add_title(title)
         format_body.check_placeholders()
         email_list.append(args.bcc)
-        email_list.append("glapidoth@gmail.com")
+        #email_list.append("glapidoth@gmail.com")
         n = EmailBuilder(to_email="", bcc=email_list,cc=args.cc, subject=args.email_subject,body=format_body.make_html(),attachments=args.attachments)
         if (args.send):
             n.send()

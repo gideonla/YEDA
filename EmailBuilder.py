@@ -62,7 +62,7 @@ class EmailBuilder:
         for i in attachments:
             self.message.attachments.add(i)
 
-    def search_inbox(self, email: str):
+    def search_inbox(self, email: str,subject=""):
         mailbox = self.account.mailbox()
 
         inbox = mailbox.inbox_folder()
@@ -75,28 +75,33 @@ class EmailBuilder:
             #pdb.set_trace()
             if check_if_msg_is_bad_delivery(message):
                 continue
+            if not (subject in message.subject):
+                continue
             i = (message.sender.address)
             if i:
                 return True
         return False
 
-    def search_sent(self, email: str):
+    def search_sent(self, email: str,subject=""):
         mailbox = self.account.mailbox()
         sent = mailbox.sent_folder()
         query = sent.new_query()
 
         query = sent.q().search(email)
-        # pdb.set_trace()
 
         messages = sent.get_messages(limit=25, query=query)
         for message in messages:
+            #pdb.set_trace()
+            if not (subject in message.subject):
+                continue
             # pdb.set_trace()
             if len(message.to) > 0:
                 if (message.to[0].address):
-                    return True
+                    return str(message.created.date())
             elif len(message.bcc) > 0:
                 if (message.bcc[0].address):
-                    return True
+                    return str(message.created.date())
+
         return False
 
     def get_dead_email(self, email: str):
