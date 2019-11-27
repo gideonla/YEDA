@@ -26,16 +26,20 @@ class FormatBody:
         return 1
 
     def add_title(self, title):
+        self.title=title
         self.modified = self.modified.replace("[TITLE]", title)
 
     def add_company_name(self, company_name):
+        self.company_name = company_name
         self.company_name = clean_company_name(company_name)
         self.change_company_name()
 
     def change_last_name(self, last_name):
+        self.last_name = last_name
         self.modified = self.modified.replace("[LAST_NAME]", last_name)
 
     def change_pi_name(self, pi_name):
+        self.pi_name = pi_name
         self.modified = self.modified.replace("[PI_NAME]", pi_name)
 
     def change_first_name(self, first_name):
@@ -45,6 +49,7 @@ class FormatBody:
         self.modified = self.modified.replace("[COMPANY_NAME]", self.company_name)
 
     def change_tech_desc(self, tech_desc):
+        self.tech_desc = tech_desc
         self.modified = self.modified.replace("[TECH_DESC]", tech_desc)
 
     def make_html(self):
