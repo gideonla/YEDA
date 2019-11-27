@@ -4,8 +4,8 @@ from utils import *
 
 
 class FormatBody:
-    def __init__(self, template_email, title="[TITLE]", last_name="[LAST_NAME]", pi_name="[PI_NAME]",
-                 company_name="[COMPANY_NAME]", tech_desc="[TECH_DESC]"):
+    def __init__(self, template_email, title="", last_name="", pi_name="",
+                 company_name="", tech_desc=""):
         self.template_email = template_email
         self.title = title
         self.last_name = last_name
@@ -66,6 +66,7 @@ class FormatBody:
                 self.title == "" or self.last_name == "" or self.pi_name == "" or self.company_name == "" or self.tech_desc == ""):
             raise ValueError('One of the place holder strings is empty')
         # print (self.modified.encode(encoding='UTF-8'))
+        pdb.set_trace()
         if self.modified.find('[TITLE]') >= 0:
             raise ValueError('TITLE place holder in the template email was not replaced')
         if self.modified.find('[LAST_NAME]') >= 0:
