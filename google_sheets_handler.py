@@ -37,7 +37,7 @@ def find_most_similar_item_in_list(item,list,max_val=0.5):
 
 class GoogleSheets:
     SCOPES = ['https://www.googleapis.com/auth/spreadsheets', "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name('YEDA-7f7ce62ed162.json', SCOPES)
+    creds = ServiceAccountCredentials.from_json_keyfile_name('/home/gideon/YEDA/YEDA-7f7ce62ed162.json', SCOPES)
     gc = gspread.authorize(creds)
 
 

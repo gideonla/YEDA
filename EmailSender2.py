@@ -1,4 +1,3 @@
-
 from google_sheets_handler import *
 from format_email_body import *
 from EmailBuilder import *
@@ -26,7 +25,7 @@ def parse_args():
     parser.add_argument('-private_email_message_template', help='Path to email template text file (when appraoching second time)', required=1)
     parser.add_argument('-pi_name', help='Name of PI', required=1)
     parser.add_argument('-desc', help='Description of technology', required=1)
-    parser.add_argument('-cc', help='Who to send cc email to', default="jacob.fierer@weizmann.ac.il")
+    parser.add_argument('-cc', help='Who to send cc email to', default="jacob.fierer@weizmann.ac.il, Orly.Savion@weizmann.ac.il  ")
     parser.add_argument('-bcc', help='Who to send bcc email to', default="magic.yeda@weizmann.ac.il")
     parser.add_argument('-email_subject', help='Email subject line', default="",required=1)
     parser.add_argument('-attachments', nargs='+', help='list of files to attach to email')
@@ -51,7 +50,7 @@ if __name__ == '__main__':
             format_body.change_first_name(first_name)
         else:
             format_body = FormatBody(args.general_email_message_template, pi_name=args.pi_name, tech_desc=args.desc)
-        print (company.encode('utf-8'),last_name.encode('utf-8'),title,email_list[0])
+        print (company,last_name,title,email_list[0])
         format_body.add_company_name(company)
         format_body.change_last_name(last_name)
         format_body.add_title(title)
@@ -64,7 +63,6 @@ if __name__ == '__main__':
         msg['From'] = 'Dr. Gideon Lapidoth - YEDA R&D<gideon.lapidoth@weizmann.ac.il>'
         msg['To'] = ''
         msg['Cc'] = args.cc
-        pdb.set_trace()
         msg['Bcc'] = args.bcc+","+emails+',glapidoth@gmail.com'
         msg['Subject'] = args.email_subject
         try:
@@ -79,8 +77,8 @@ if __name__ == '__main__':
         server = smtplib.SMTP('localhost')
         pdb.set_trace()
         rcpts = (msg['Cc']+","+msg['To']+","+msg['Bcc']).split(',')
-        #print (rcpts.encode('utf-8'))
-        print ("sending to",last_name,"at",company.encode('utf-8'))
+        print (rcpts)
+        print ("sending to",last_name,"at",company)
         server.sendmail('gideon.lapidoth@weizmann.ac.il', rcpts, msg.as_string())
         pdb.set_trace()
         GS_master.update_contacted(email_list[0])

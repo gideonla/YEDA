@@ -137,7 +137,6 @@ class email_search:
         cell_list=[]
         col = self.GS.col_num_map.get("emails")
         email_colmn =  self.GS.get_emails()
-        email_colmn.pop(0)#remove header
         name =  self.GS.get_first_names()
         email_colmn_padding = [''] * (len(name) - len(email_colmn))
         email_colmn.extend(email_colmn_padding)
@@ -148,6 +147,7 @@ class email_search:
                 continue
             #pdb.set_trace()
             cell_list.append(Cell(row+2, col, ",".join(self.email_template.get(key))))
+            pdb.set_trace()
         pdb.set_trace()
         self.GS.wks.update_cells(cell_list)
 
@@ -191,14 +191,22 @@ class email_search:
         :return:
         '''
         # ES.split_input_into_names_and_domains()
+        #pdb.set_trace()
         self.make_list_of_names_from_google_sheet()
         domain_list = self.GS.get_website()
         domain_list.pop(0)
+        email_list = self.GS.get_emails()
+        email_list.pop(0)
+        email_list_padding = ['0'] * (len(self.names) - len(email_list))
+        email_list.extend(email_list_padding)
         for index_name in range(0, len(self.names)):
+            if "@" in email_list[index_name]:
+                continue #if email address already there skip
             print (self.names[index_name].encode('utf-8'))
             domain = self.clean_domain_name(domain_list[index_name])
-            #pdb.set_trace()
             self.guess_emails_from_name(self.names[index_name], domain)
+            pdb.set_trace()
+
             # print(ES.email_template[name])
 
         ES.update_google_sheet_w_emails()
@@ -261,7 +269,7 @@ class email_search:
 if __name__ == "__main__":
     args=parse_args()
     ES=email_search(args.query,args.google_sheet)
-    #ES.generate_emails()
-    ES.check_emails()
+    ES.generate_emails()
+    #ES.check_emails()
 
 

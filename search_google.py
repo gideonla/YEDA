@@ -13,6 +13,12 @@ import argparse
 import re
 from gspread import Cell
 from bs4 import BeautifulSoup
+import re
+
+def strip_special_charechters(name):
+    name = re.sub('[\ -/]', '', name)
+    return name
+
 
 def clean_company_name(company_name):
     # if self.ends_with_s():
@@ -58,13 +64,15 @@ class google_search:
         options = webdriver.ChromeOptions()
         options.add_experimental_option("excludeSwitches", ['enable-automation'])
         # self.browser = webdriver.Chrome(chrome_options=options,executable_path='/home/gideon/YEDA/chromedriver')
-        self.browser = 0  # = webdriver.Firefox()
+
         self.my_api_key = "AIzaSyDGwfHLWYo5-kITkD0YD7LEg0f0yD4jTqs"
         self.my_cse_id = "010801457502507310290:vqjegg6emhv"
         self.google_sheet1 =GoogleSheets(google_sheet1,0)
-        self.google_sheet2 = GoogleSheets(google_sheet2, 0)
+        if not (google_sheet2==''):
+            self.google_sheet2 = GoogleSheets(google_sheet2, 0)
 
     def linkedin_login(self):
+        self.browser = webdriver.Firefox()
         self.browser.get('https://www.linkedin.com/login?trk=gulsest_homepage-basic_nav-header-signin')
         username = self.browser.find_element_by_name('session_key')
         username.send_keys("bla123123@yahoo.com")
@@ -153,45 +161,25 @@ class google_search:
         res = service.cse().list(q=search_term, cx=self.my_cse_id, start=2).execute()
         return res
 
-    def get_company_data_from_linkedin_when_logged_in(self):
+    def get_company_data_from_linkedin_when_logged_in(self,url):
+        self.browser.get(url)
         time.sleep(2)
         # for num,data in enumerate(browser.find_elements_by_xpath("//div[starts-with(@id,'ember')]")):
         #    print (num,data.text)
-        try:
-            time.sleep(1)
-            self.browser.find_element_by_xpath("//*[text()[contains(.,'About')]]").click()
-            time.sleep(2)
-        except:
-            return "Did not load company page"
-        data = self.browser.find_elements_by_xpath("//div[starts-with(@id,'ember')]")
-        for num, line in enumerate(data):
-            try:
-                if "Website" in str(line.text.encode('utf-8')):
-                    break
-            except:
-                data = self.browser.find_elements_by_xpath("//div[starts-with(@id,'ember')]")
-                continue
-        try:
-            tmp = (data[num].text.encode('utf-8'))
-        except:
-            pdb.set_trace()
-        data = tmp.splitlines()
+        content = self.browser.find_element_by_class_name('mb3')
+        pdb.set_trace()
         overview, website, industry, name = "", "", "", ""
-        try:
-            for num, dat in enumerate(data):
-                # pdb.set_trace()
-                # print (num,dat)
+        data=content.text.encode('utf-8').splitlines()
+        for num, dat in enumerate(data):
+            try:
                 if re.search("Industry", str(dat)):
                     industry = str(data[num + 1])
                 if re.search("Website", str(dat)):
                     website = str(data[num + 1])
-            name = str(data[0])
-        except:
-            return name, website, industry
-        name = name[2:-1]
-        website = website[2:-1]
-        industry = industry[2:-1]
-        return name, website, industry
+            except:
+                return website, industry
+
+        return website, industry
 
     def search_using_selenium(self, single_query):
         url = 'https://www.google.com/'
@@ -215,24 +203,33 @@ class google_search:
             print(single_query, "|", self.get_company_data_from_linkedin_when_logged_in())
 
     def get_company_linkedin_about_page(self):
-        fo = open("/home/gideon/YEDA/1718/assignees", "r")
-        for i in fo.readlines():
-            # GS.duckduck_search(i.rstrip())
-            # time.sleep(1)
-            res = GS.google_search_API("site:linkedin.com AND " + "\"" + i.rstrip() + "\"")
-            pdb.set_trace()
+        company_name = self.google_sheet1.get_company_names()
+        company_name.pop(0)
+        for i in company_name:
+            cleancompanyname=clean_company_name(i.rstrip())
+            res = self.google_search_API("site:linkedin.com/company AND " + "\"" + cleancompanyname + "\"")
             if int(res.get('searchInformation').get('totalResults')) == 0:
                 continue
-            print(i.rstrip())
-            minres = min(5, int(res.get('searchInformation').get('totalResults')))
+            #print(cleancompanyname)
+            minres = min(100, len(res.get('items')))
             for num in range(minres):  # if API result is not in first 5 results then continue
-                # pdb.set_trace()
+                #pdb.set_trace()
                 link = res.get('items')[num].get('link')
-                if "company" in link:
+                name=""
+                if "about" in link:
+                    name=link.split("/")[-2]
+                else:
+                    name = link.split("/")[-1]
+                print (name,cleancompanyname)
+                clean_name = strip_special_charechters(name).lower()
+                cleancompanyname = strip_special_charechters(cleancompanyname).lower()
+                similarity_score=similar(clean_name,cleancompanyname)
+                if similarity_score>0.8:
                     if "about" in link:
                         print(i.rstrip(), "|", link)
                     else:
                         print(i.rstrip(), "|", link + "/about/")
+                    break
 
     def search_company_with_keywords(self, search_string):
         '''
@@ -242,25 +239,32 @@ class google_search:
             :param self:
             :return:
             '''
+        companies_contacted = self.google_sheet2.get_company_names()
+        emails_of_preivously_contacted_people = self.google_sheet2.get_emails()
+        companies_to_contact_list = self.google_sheet1.get_company_names()
         # pdb.set_trace()
         cell_list=[]
-        website_list = self.google_sheet.get_website()
+        website_list = self.google_sheet1.get_website()
         website_list.pop(0)  # remove coloumn header
-        google_search_results = self.google_sheet.get_results()
+        google_search_results = self.google_sheet1.get_results()
         google_search_results.pop(0)
         google_search_results_padding = ['0'] * (len(website_list) - len(google_search_results))
         google_search_results.extend(google_search_results_padding)
-        google_results_column = self.google_sheet.col_num_map["results"]
+        google_results_column = self.google_sheet1.col_num_map["results"]
 
         for i,link in enumerate(website_list):
             if not google_search_results[i]=="0" and (not google_search_results[i]==""):
                 continue
-
+            print ("site:" + website_list[i].rstrip()+search_string)
             res = google_search.google_search_API(
                 "site:" + website_list[i].rstrip() + search_string)
+            pdb.set_trace()
             print(website_list[i].rstrip(), int(res.get('searchInformation').get('totalResults')))
             cell_list.append(Cell(i + 2, google_results_column, int(res.get('searchInformation').get('totalResults'))))
-        self.google_sheet.wks.update_cells(cell_list)
+        self.google_sheet1.wks.update_cells(cell_list)
+
+
+    #def find_company_
 
     def find_people_on_linkedin_using_google(self,search_string):
         companies_contacted=self.google_sheet2.get_company_names()
@@ -277,16 +281,9 @@ class google_search:
             searched_emails=[s for s in emails_of_preivously_contacted_people if website_of_companies_to_contact[i] in s]
             if len(searched_emails) >0:
                 print ("company %s already contacted,extract emails from master list"%(website_of_companies_to_contact[i]))
-
                 continue
-            #print(companies_to_contact_list[i])
-            #pdb.set_trace()
-            try:
-                if not int(results[i]):  # if num of results is 0 then continue
-                    continue
-            except:
-                continue
-            res = google_search.google_search_API(companies_to_contact_list[i] +" AND "+search_string)
+            cleancompanyname=clean_company_name(companies_to_contact_list[i])
+            res = google_search.google_search_API(cleancompanyname +" AND "+search_string)
             #pdb.set_trace()
             try:
                 if int(res.get('searchInformation').get('totalResults')) == 0:
@@ -309,7 +306,7 @@ class google_search:
                     title = desc[1].replace(' ...', '')
                 except:
                     continue  # I usually have an error when the description is poorly formatted
-                print(link, "|", companies_to_contact_list[i], "|", "|", name[0], "|", " ".join(name[1:]).lstrip(), "|", title)
+                print(link ,"|",website_of_companies_to_contact[i] ,"|", companies_to_contact_list[i], "|", "|", name[0], "|", " ".join(name[1:]).lstrip(), "|", title)
                 count += 1
                 if (count == 5):
                     break
@@ -361,8 +358,28 @@ if __name__ == '__main__':
     print("select the desired option:")
     print("1:generate list of people from company name")
     print("2:Search for company linkedin about page")
+    print("3:Scrape linkedin for company information")
+    print("4:Search google with company name and keywords")
+
     input_num = int(input())
     if input_num==1:
         google_search = google_search(google_sheet1=args.cit,google_sheet2=args.cl,)  # initiate google search object
         google_search.find_people_on_linkedin_using_google('site:linkedin.com/in AND "academic collaboration" OR "Drug Development" OR "Search and Evaluation" OR "Development" OR "Alliance and Integration" OR "Licensing" OR "BD&L" OR "Opportunities" OR "biological development" OR "Innovation" OR "Emerging Technology" OR "New Ventures" OR "Commercial Strategy" OR "Director of R&D" OR "Scouting" OR "CMO" OR "CSO" OR "Business Development" -jobs')
         #" AND immunotherapy AND antibodies AND (cancer OR autoimmune)"
+    if input_num == 2:
+        google_search = google_search(google_sheet1=args.cit, google_sheet2=args.cl, )
+        google_search.get_company_linkedin_about_page()
+    if input_num==3:
+        google_search = google_search(google_sheet1=args.cit, google_sheet2=args.cl, )  # initiate google search object
+        google_search.linkedin_login()
+        company_websites=google_search.google_sheet1.get_website()
+        company_websites.pop(0)
+        for website in company_websites:
+            try:
+                print (google_search.get_company_data_from_linkedin_when_logged_in(website))
+            except:
+                print("Did not find linked page:",website)
+    if input_num == 4:
+        google_search = google_search(google_sheet1=args.cit, google_sheet2=args.cl, )
+        google_search.search_company_with_keywords(" AND \"enzyme inhibitor\"")
+

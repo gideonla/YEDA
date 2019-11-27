@@ -24,10 +24,6 @@ def parse_args():
     parser.add_argument('-attachments', nargs='+', help='list of files to attach to email')
     parser.add_argument("--send", type=str2bool, nargs='?',const=True, default=False, help="If false save email to drafts and don't send")
 
-
-
-
-
     return parser.parse_args()
 
 if __name__ == '__main__':
