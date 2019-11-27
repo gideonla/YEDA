@@ -13,10 +13,14 @@ class FormatBody:
         self.company_name = company_name
         self.tech_desc = tech_desc
         self.modified = codecs.open(self.template_email, encoding="utf-8").read()
-        self.modified = self.modified.replace("[TITLE]", self.title)
-        self.modified = self.modified.replace("[LAST_NAME]", self.last_name)
-        self.modified = self.modified.replace("[PI_NAME]", self.pi_name)
-        self.modified = self.modified.replace("[TECH_DESC]", self.tech_desc)
+        if not (title==""):
+            self.modified = self.modified.replace("[TITLE]", self.title)
+        if not (last_name == ""):
+            self.modified = self.modified.replace("[LAST_NAME]", self.last_name)
+        if not (pi_name == ""):
+            self.modified = self.modified.replace("[PI_NAME]", self.pi_name)
+        if not (tech_desc == ""):
+            self.modified = self.modified.replace("[TECH_DESC]", self.tech_desc)
         self.unmodified = self.modified
 
     def ends_with_s(self):
