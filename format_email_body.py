@@ -1,4 +1,5 @@
 import re
+import codecs
 
 class FormatBody:
     def __init__(self, template_email, title="[TITLE]", last_name="[LAST_NAME]", pi_name="[PI_NAME]", company_name="[COMPANY_NAME]", tech_desc="[TECH_DESC]"):
@@ -8,7 +9,7 @@ class FormatBody:
         self.pi_name = pi_name
         self.company_name = company_name
         self.tech_desc = tech_desc
-        self.modified = open(self.template_email).read()
+        self.modified = codecs.open(self.template_email,encoding="utf-8").read()
         self.modified = self.modified.replace("[TITLE]", self.title)
         self.modified = self.modified.replace("[LAST_NAME]", self.last_name)
         self.modified = self.modified.replace("[PI_NAME]", self.pi_name)
@@ -49,6 +50,8 @@ class FormatBody:
         self.company_name=re.sub(' AG', '', self.company_name)
         self.company_name=re.sub(' International(.*)?', '', self.company_name)
         self.company_name=re.sub(' Ltd(.*)?', '', self.company_name)
+        self.company_name = re.sub(' B.V(.*)?', '', self.company_name)
+        self.company_name = re.sub(' S.A(.*)?', '', self.company_name)
 
 
         self.modified = self.modified.replace("[COMPANY_NAME]",self.company_name)
@@ -63,17 +66,30 @@ class FormatBody:
         self.modified = self.modified.replace("\n","<br>")
         return self.modified
 
+    def get_body(self):
+        re.sub(' +', ' ', self.modified)
+        return self.modified
+
     def init(self): #return template to starting status
         self.modified = self.unmodified
+
 
     def check_placeholders(self):
         """ Make sure that all the place holder strings are in place
                 """
         if ( self.title=="" or self.last_name=="" or self.pi_name=="" or self.company_name=="" or self.tech_desc=="" ):
             raise ValueError('One of the place holder strings is empty')
-        if (self.modified.find('[')>=0 or self.modified.find(']')>=0):
-            raise ValueError('One of the place holders in the template email was not replaced')
-
+        #print (self.modified.encode(encoding='UTF-8'))
+        if self.modified.find('[TITLE]') >= 0:
+            raise ValueError('TITLE place holder in the template email was not replaced')
+        if self.modified.find('[LAST_NAME]') >= 0:
+            raise ValueError('LAST_NAME place holder in the template email was not replaced')
+        if self.modified.find('[PI_NAME]') >= 0:
+            raise ValueError('PI_NAME place holder in the template email was not replaced')
+        if self.modified.find('[COMPANY_NAME]') >= 0:
+            raise ValueError('COMPANY_NAME place holder in the template email was not replaced')
+        if self.modified.find('[TECH_DESC]') >= 0:
+            raise ValueError('TECH_DESC place holder in the template email was not replaced')
 
 
 if __name__ == "__main__":

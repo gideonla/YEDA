@@ -7,14 +7,15 @@ import time
 from gspread import Cell
 
 
-
 def parse_args():
     """"""
     desc = 'Will search inbox'
-    parser = argparse.ArgumentParser(description = desc)
-    parser.add_argument('-mshn','--master_sheet_hash_number', metavar='1QhN0gVxELRtKb3ElGAeGQbK5s4zsEVV0lUCSMAzdccI',
-                        help='The google sheet hash number, found in the browser address line', required=1,dest='mshn')
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('-mshn', '--master_sheet_hash_number', metavar='1QhN0gVxELRtKb3ElGAeGQbK5s4zsEVV0lUCSMAzdccI',
+                        help='The google sheet hash number, found in the browser address line', required=1, dest='mshn')
+    parser.add_argument('-Yeda_num', metavar='1633', help='The YEDA reference number', required=0, dest='Yeda_num',default="")
     return parser.parse_args()
+
 
 if __name__ == "__main__":
     start = time.time()
@@ -32,7 +33,7 @@ if __name__ == "__main__":
     found = False
     cell_list = []
     for index in range(len(email_list)):
-        print(index)
+        #print(index)
         # pdb.set_trace()
         if str2bool(replied[index]):
             continue
@@ -41,13 +42,13 @@ if __name__ == "__main__":
         for email_str in email_list[index].split(","):
             if "@" not in email_str:
                 continue
-            found = EMAIL.search_inbox(email_str) or found
-            #pdb.set_trace()
+            found = EMAIL.search_inbox(email_str,args.Yeda_num) or found
+            # pdb.set_trace()
         if found:
             print(email_str)
         cell_list.append(Cell(index + 2, replied_coulmn, int(found)))
-        found=False
-    pdb.set_trace()
+        found = False
+    #pdb.set_trace()
     GS_master.wks.update_cells(cell_list)
     end = time.time()
     print(" Total run time: " + str(end - start) + " seconds")

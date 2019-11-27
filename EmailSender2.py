@@ -1,8 +1,16 @@
+
 from google_sheets_handler import *
 from format_email_body import *
 from EmailBuilder import *
 import argparse
 import pdb
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
+from os.path import basename
+
+
 
 
 
@@ -43,19 +51,38 @@ if __name__ == '__main__':
             format_body.change_first_name(first_name)
         else:
             format_body = FormatBody(args.general_email_message_template, pi_name=args.pi_name, tech_desc=args.desc)
-        print (company,last_name,title,email_list[0])
+        print (company.encode('utf-8'),last_name.encode('utf-8'),title,email_list[0])
         format_body.add_company_name(company)
         format_body.change_last_name(last_name)
         format_body.add_title(title)
         format_body.check_placeholders()
         email_list.append(args.bcc)
         #email_list.append("glapidoth@gmail.com")
-        n = EmailBuilder(to_email="", bcc=email_list,cc=args.cc, subject=args.email_subject,body=format_body.make_html(),attachments=args.attachments)
-        if (args.send):
-            n.send()
-        else:
-            print ("saving draft")
-            n.save_draft()
+        msg = MIMEMultipart()
+        body = MIMEText(format_body.get_body(),'html')
+        msg.attach(body)
+        msg['From'] = 'Dr. Gideon Lapidoth - YEDA R&D<gideon.lapidoth@weizmann.ac.il>'
+        msg['To'] = ''
+        msg['Cc'] = args.cc
+        pdb.set_trace()
+        msg['Bcc'] = args.bcc+","+emails+',glapidoth@gmail.com'
+        msg['Subject'] = args.email_subject
+        try:
+            for f in args.attachments:
+                with open(f, "rb") as fil:
+                    part = MIMEApplication(fil.read(),Name=basename(f))
+                # After the file is closed
+                part['Content-Disposition'] = 'attachment; filename="%s"' % basename(f)
+                msg.attach(part)
+        except:
+            print ("no files to attach")
+        server = smtplib.SMTP('localhost')
+        pdb.set_trace()
+        rcpts = (msg['Cc']+","+msg['To']+","+msg['Bcc']).split(',')
+        #print (rcpts.encode('utf-8'))
+        print ("sending to",last_name,"at",company.encode('utf-8'))
+        server.sendmail('gideon.lapidoth@weizmann.ac.il', rcpts, msg.as_string())
+        pdb.set_trace()
         GS_master.update_contacted(email_list[0])
         format_body.init()
 
