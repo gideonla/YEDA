@@ -8,6 +8,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from os.path import basename
+from bs4 import BeautifulSoup
+
 
 
 
@@ -41,6 +43,7 @@ if __name__ == '__main__':
     args = parse_args()
     GS = GoogleSheets(args.cshn,0) #create the google sheet object that holds the email list for the current campaign
     GS_master= GoogleSheets(args.mshn,1) #this object holds the google sheet for the master list (where all the company list live)
+    check_email="y"
     for i in range(GS.number_of_chosen_emails()):
 
         company,last_name,title,emails,first_name=GS.iterate_sheet()
@@ -51,32 +54,31 @@ if __name__ == '__main__':
             format_body.change_first_name(first_name)
         else:
             format_body = FormatBody(args.general_email_message_template, pi_name=args.pi_name, tech_desc=args.desc)
-        print (company,last_name,title,email_list[0])
+        print (company.encode('utf-8'),last_name,title,email_list[0])
         format_body.add_company_name(company)
         format_body.change_last_name(last_name)
         format_body.add_title(title)
         format_body.check_placeholders()
-        email_list.append(args.bcc)
+        #email_list.append(args.bcc)
         #email_list.append("glapidoth@gmail.com")
+
         for num, email in enumerate(email_list):
+            if email=="":
+                continue
+
             msg = MIMEMultipart()
-            body = MIMEText(format_body.get_body(),'html')
-
-
             msg['From'] = 'Dr. Gideon Lapidoth - YEDA R&D<gideon.lapidoth@weizmann.ac.il>'
             msg['Subject'] = args.email_subject
-
-
             if num>0:
                 msg['Cc'] = ""
                 msg['Bcc'] = 'glapidoth@gmail.com'
-                format_body.add_email(email,"[EMAIL]")
+                format_body.add_email(email,email_list[num-1])
             else:
                 msg['Cc'] = args.cc
                 msg['Bcc'] = args.bcc + ',glapidoth@gmail.com'
-                format_body.add_email(email, email_list[num-1])
+                format_body.add_email(email,"[EMAIL]")
             msg['To'] = email
-            format_body.add_email(email)
+            body = MIMEText(format_body.get_body(),'html')
             msg.attach(body)
             try:
                 for f in args.attachments:
@@ -90,11 +92,17 @@ if __name__ == '__main__':
             server = smtplib.SMTP('localhost')
             rcpts = (msg['Cc']+","+msg['To']+","+msg['Bcc']).split(',')
             print (rcpts)
-            print ("sending to",last_name,"at",company)
-            pdb.set_trace()
+            print ("sending to",last_name,"at",company.encode('utf-8'))
+            if (check_email=="y"):
+                print ("Email subject:")
+                print (msg['Subject'])
+                print ("Email body about to be sent:")
+                print (body)
+                check_email = input("Email "+str(i+1)+" about to be sent, should I keep showing you emails? 'y'/'n'")
+                check_email.rstrip('\r\n')
             server.sendmail('gideon.lapidoth@weizmann.ac.il', rcpts, msg.as_string())
-        GS_master.update_contacted(email_list[0])
-        format_body.init()
+    GS_master.update_contacted(email_list[0])
+    format_body.init()
 
 
 
