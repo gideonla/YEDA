@@ -33,8 +33,8 @@ class FormatBody:
         self.title=title
         self.modified = self.modified.replace("[TITLE]", title)
 
-    def add_email(self, email):
-        self.modified = self.modified.replace("[EMAIL]", email)
+    def add_email(self, email,prev_str):
+        self.modified = self.modified.replace(prev_str, email)
 
     def add_company_name(self, company_name):
         self.company_name = company_name
