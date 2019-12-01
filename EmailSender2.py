@@ -58,18 +58,21 @@ if __name__ == '__main__':
         format_body.check_placeholders()
         email_list.append(args.bcc)
         #email_list.append("glapidoth@gmail.com")
-        msg = MIMEMultipart()
-        body = MIMEText(format_body.get_body(),'html')
+        for num, email in enumerate(email_list):
+            msg = MIMEMultipart()
+            body = MIMEText(format_body.get_body(),'html')
 
 
-        msg['From'] = 'Dr. Gideon Lapidoth - YEDA R&D<gideon.lapidoth@weizmann.ac.il>'
-        msg['Subject'] = args.email_subject
-        msg['Cc'] = args.cc
-        msg['Bcc'] = args.bcc + ',glapidoth@gmail.com'
-        for num,email in enumerate(email_list):
+            msg['From'] = 'Dr. Gideon Lapidoth - YEDA R&D<gideon.lapidoth@weizmann.ac.il>'
+            msg['Subject'] = args.email_subject
+
+
             if num>0:
                 msg['Cc'] = ""
                 msg['Bcc'] = 'glapidoth@gmail.com'
+            else:
+                msg['Cc'] = args.cc
+                msg['Bcc'] = args.bcc + ',glapidoth@gmail.com'
             msg['To'] = email
             format_body.add_email(email)
             msg.attach(body)
