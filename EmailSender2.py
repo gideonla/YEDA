@@ -70,9 +70,11 @@ if __name__ == '__main__':
             if num>0:
                 msg['Cc'] = ""
                 msg['Bcc'] = 'glapidoth@gmail.com'
+                format_body.add_email(email,"[EMAIL]")
             else:
                 msg['Cc'] = args.cc
                 msg['Bcc'] = args.bcc + ',glapidoth@gmail.com'
+                format_body.add_email(email, email_list[num-1])
             msg['To'] = email
             format_body.add_email(email)
             msg.attach(body)
