@@ -61,7 +61,7 @@ if __name__ == '__main__':
         msg = MIMEMultipart()
         body = MIMEText(format_body.get_body(),'html')
 
-        msg.attach(body)
+
         msg['From'] = 'Dr. Gideon Lapidoth - YEDA R&D<gideon.lapidoth@weizmann.ac.il>'
         msg['Subject'] = args.email_subject
         msg['Cc'] = args.cc
@@ -72,6 +72,7 @@ if __name__ == '__main__':
                 msg['Bcc'] = 'glapidoth@gmail.com'
             msg['To'] = email
             format_body.add_email(email)
+            msg.attach(body)
             try:
                 for f in args.attachments:
                     with open(f, "rb") as fil:
