@@ -25,7 +25,7 @@ def parse_args():
     parser.add_argument('-private_email_message_template', help='Path to email template text file (when appraoching second time)', required=1)
     parser.add_argument('-pi_name', help='Name of PI', required=1)
     parser.add_argument('-desc', help='Description of technology', required=1)
-    parser.add_argument('-cc', help='Who to send cc email to', default="jacob.fierer@weizmann.ac.il, Orly.Savion@weizmann.ac.il  ")
+    parser.add_argument('-cc', help='Who to send cc email to', default="jacob.fierer@weizmann.ac.il ")
     parser.add_argument('-bcc', help='Who to send bcc email to', default="magic.yeda@weizmann.ac.il")
     parser.add_argument('-email_subject', help='Email subject line', default="",required=1)
     parser.add_argument('-attachments', nargs='+', help='list of files to attach to email')
@@ -42,6 +42,7 @@ if __name__ == '__main__':
     GS = GoogleSheets(args.cshn,0) #create the google sheet object that holds the email list for the current campaign
     GS_master= GoogleSheets(args.mshn,1) #this object holds the google sheet for the master list (where all the company list live)
     for i in range(GS.number_of_chosen_emails()):
+
         company,last_name,title,emails,first_name=GS.iterate_sheet()
         email_list=emails.split(",")
         email_replied=GS_master.check_if_replied(email_list[0]) #if this email has been contacted before (as marked in the master list) return appropriate boolean.
@@ -59,28 +60,33 @@ if __name__ == '__main__':
         #email_list.append("glapidoth@gmail.com")
         msg = MIMEMultipart()
         body = MIMEText(format_body.get_body(),'html')
+
         msg.attach(body)
         msg['From'] = 'Dr. Gideon Lapidoth - YEDA R&D<gideon.lapidoth@weizmann.ac.il>'
-        msg['To'] = ''
-        msg['Cc'] = args.cc
-        msg['Bcc'] = args.bcc+","+emails+',glapidoth@gmail.com'
         msg['Subject'] = args.email_subject
-        try:
-            for f in args.attachments:
-                with open(f, "rb") as fil:
-                    part = MIMEApplication(fil.read(),Name=basename(f))
-                # After the file is closed
-                part['Content-Disposition'] = 'attachment; filename="%s"' % basename(f)
-                msg.attach(part)
-        except:
-            print ("no files to attach")
-        server = smtplib.SMTP('localhost')
-        pdb.set_trace()
-        rcpts = (msg['Cc']+","+msg['To']+","+msg['Bcc']).split(',')
-        print (rcpts)
-        print ("sending to",last_name,"at",company)
-        server.sendmail('gideon.lapidoth@weizmann.ac.il', rcpts, msg.as_string())
-        pdb.set_trace()
+        msg['Cc'] = args.cc
+        msg['Bcc'] = args.bcc + ',glapidoth@gmail.com'
+        for num,email in enumerate(email_list):
+            if num>0:
+                msg['Cc'] = ""
+                msg['Bcc'] = 'glapidoth@gmail.com'
+            msg['To'] = email
+            format_body.add_email(email)
+            try:
+                for f in args.attachments:
+                    with open(f, "rb") as fil:
+                        part = MIMEApplication(fil.read(),Name=basename(f))
+                    # After the file is closed
+                    part['Content-Disposition'] = 'attachment; filename="%s"' % basename(f)
+                    msg.attach(part)
+            except:
+                print ("no files to attach")
+            server = smtplib.SMTP('localhost')
+            rcpts = (msg['Cc']+","+msg['To']+","+msg['Bcc']).split(',')
+            print (rcpts)
+            print ("sending to",last_name,"at",company)
+            pdb.set_trace()
+            server.sendmail('gideon.lapidoth@weizmann.ac.il', rcpts, msg.as_string())
         GS_master.update_contacted(email_list[0])
         format_body.init()
 
