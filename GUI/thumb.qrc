@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="thumb">
+    <file>yeda_thumb.png</file>
+  </qresource>
+</RCC>

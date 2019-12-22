@@ -8,6 +8,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from os.path import basename
+from bs4 import BeautifulSoup
+
 
 
 
@@ -30,12 +32,79 @@ def parse_args():
     parser.add_argument('-email_subject', help='Email subject line', default="",required=1)
     parser.add_argument('-attachments', nargs='+', help='list of files to attach to email')
     parser.add_argument("--send", type=str2bool, nargs='?',const=True, default=False, help="If false save email to drafts and don't send")
-
-
-
-
-
     return parser.parse_args()
+
+    # noinspection PyUnreachableCode
+
+
+def Email_sender(master_list, current_list, pi_name, desc, general_email_message_template,
+                 private_email_message_template, cc, bcc, subject, attachments):
+    GS = GoogleSheets(current_list,
+                      0)  # create the google sheet object that holds the email list for the current campaign
+
+    GS_master = GoogleSheets(master_list,
+                             1)  # this object holds the google sheet for the master list (where all the company list live)
+    for i in range(GS.number_of_chosen_emails()):
+        company, last_name, title, emails, first_name = GS.iterate_sheet()
+        email_list = emails.split(",")
+        email_replied = GS_master.check_if_replied(email_list[
+                                                       0])  # if this email has been contacted before (as marked in the master list) return appropriate boolean.
+        if email_replied:
+            format_body = FormatBody(private_email_message_template, pi_name=pi_name, tech_desc=desc)
+            format_body.change_first_name(first_name)
+        else:
+            format_body = FormatBody(general_email_message_template, pi_name=pi_name, tech_desc=desc)
+        print(company, last_name, title, email_list[0])
+        format_body.add_company_name(company)
+        format_body.change_last_name(last_name)
+        format_body.add_title(title)
+        format_body.check_placeholders()
+        email_list.append(bcc)
+        # email_list.append("glapidoth@gmail.com")
+        check_email = "n"
+        for num, email in enumerate(email_list):
+            pdb.set_trace()
+            msg = MIMEMultipart()
+            msg['From'] = 'Dr. Gideon Lapidoth - YEDA R&D<gideon.lapidoth@weizmann.ac.il>'
+            msg['Subject'] = subject
+            if num > 0:
+                msg['Cc'] = ""
+                msg['Bcc'] = 'glapidoth@gmail.com'
+                format_body.add_email(email, email_list[num - 1])
+            else:
+                msg['Cc'] = cc
+                msg['Bcc'] = bcc + ',glapidoth@gmail.com'
+                format_body.add_email(email, "[EMAIL]")
+            msg['To'] = email
+            body = MIMEText(format_body.get_body(), 'html')
+            msg.attach(body)
+            try:
+                for f in attachments:
+                    with open(f, "rb") as fil:
+                        part = MIMEApplication(fil.read(), Name=basename(f))
+                    # After the file is closed
+                    part['Content-Disposition'] = 'attachment; filename="%s"' % basename(f)
+                    msg.attach(part)
+            except:
+                print("no files to attach")
+            pdb.set_trace()
+            server = smtplib.SMTP('localhost')
+            rcpts = (msg['Cc'] + "," + msg['To'] + "," + msg['Bcc']).split(',')
+            print(rcpts)
+            print("sending to", last_name, "at", company)
+            if (check_email == "n"):
+                print("Email subject:")
+                print(msg['Subject'])
+                print("Email body about to be sent:")
+                soup = BeautifulSoup(body)
+                print(soup.get_text())
+                print(soup)
+                check_email = raw_input("Email", num, " sent, should I keep showin you email? 'y'/'n'")
+                check_email.rstrip('\r\n')
+            server.sendmail('gideon.lapidoth@weizmann.ac.il', rcpts, msg.as_string())
+    GS_master.update_contacted(email_list[0])
+    format_body.init()
+
 
 if __name__ == '__main__':
     args = parse_args()
@@ -58,25 +127,22 @@ if __name__ == '__main__':
         format_body.check_placeholders()
         email_list.append(args.bcc)
         #email_list.append("glapidoth@gmail.com")
+        check_email="n"
         for num, email in enumerate(email_list):
+            pdb.set_trace()
             msg = MIMEMultipart()
-            body = MIMEText(format_body.get_body(),'html')
-
-
             msg['From'] = 'Dr. Gideon Lapidoth - YEDA R&D<gideon.lapidoth@weizmann.ac.il>'
             msg['Subject'] = args.email_subject
-
-
             if num>0:
                 msg['Cc'] = ""
                 msg['Bcc'] = 'glapidoth@gmail.com'
-                format_body.add_email(email,"[EMAIL]")
+                format_body.add_email(email,email_list[num-1])
             else:
                 msg['Cc'] = args.cc
                 msg['Bcc'] = args.bcc + ',glapidoth@gmail.com'
-                format_body.add_email(email, email_list[num-1])
+                format_body.add_email(email,"[EMAIL]")
             msg['To'] = email
-            format_body.add_email(email)
+            body = MIMEText(format_body.get_body(),'html')
             msg.attach(body)
             try:
                 for f in args.attachments:
@@ -92,10 +158,18 @@ if __name__ == '__main__':
             print (rcpts)
             print ("sending to",last_name,"at",company)
             pdb.set_trace()
+            if (check_email=="n"):
+                print ("Email subject:")
+                print (msg['Subject'])
+                print ("Email body about to be sent:")
+                soup = BeautifulSoup(body)
+                print(soup.get_text())
+                print (soup)
+                check_email = raw_input("Email",num," sent, should I keep showin you email? 'y'/'n'")
+                check_email.rstrip('\r\n')
             server.sendmail('gideon.lapidoth@weizmann.ac.il', rcpts, msg.as_string())
-        GS_master.update_contacted(email_list[0])
-        format_body.init()
-
+    GS_master.update_contacted(email_list[0])
+    format_body.init()
 
 
 
