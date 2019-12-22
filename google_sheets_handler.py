@@ -43,6 +43,7 @@ class GoogleSheets:
 
     def __init__(self, sheet_hash, master_list:bool=0, general_WS:bool=0):
         self.c = [] #this list will map bewtween names and the current sheet coulmn values
+        self.chosen=[]
         self.general_WS = general_WS  # general WS means that this is not a "companies WKS"
         self.master_list=master_list
         self.wks = GoogleSheets.gc.open_by_key(sheet_hash).sheet1
@@ -78,6 +79,14 @@ class GoogleSheets:
         """
         if self.general_WS:
             return
+        from PyQt5.QtCore import pyqtRemoveInputHook
+
+        # Or for Qt5
+        # from PyQt5.QtCore import pyqtRemoveInputHook
+
+        from pdb import set_trace
+        pyqtRemoveInputHook()
+        set_trace()
         self.col_num_map={}
         header_values = [x.lower() for x in self.wks.row_values(1)]
         key_values =[x.lower() for x in ["Company Name","title","first","Last Name","E-Mail","chosen","contacted","replied","linkedin","website","results", "Date contacted"]]
